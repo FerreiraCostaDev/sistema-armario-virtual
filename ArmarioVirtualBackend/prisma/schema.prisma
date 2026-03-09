@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model Loja {
+  id         String     @id @default(uuid())
+  nome       String
+  cnpj       String     @unique
+  endereco   String
+  ativo      Boolean    @default(true)
+  criadoEm  DateTime   @default(now())
+
+  vendedores Vendedor[]
+  produtos   Produto[]
+  sessoes    Sessao[]
+  qrcodes    QRCode[]
+}
+
+model Vendedor {
+  id        String   @id @default(uuid())
+  nome      String
+  email     String   @unique
+  senha     String
+  ativo     Boolean  @default(true)
+  criadoEm DateTime @default(now())
+
+  lojaId  String
+  loja    Loja     @relation(fields: [lojaId], references: [id])
+  sessoes Sessao[]
+}
+
+model Cliente {
+  id             String    @id @default(uuid())
+  nome           String?
+  telefone       String    @unique
+  aceitouLGPD    Boolean   @default(false)
+  dataAceiteLGPD DateTime?
+  criadoEm      DateTime  @default(now())
+
+  medidas Medidas?
+  sessoes Sessao[]
+  looks   Look[]
+}
+
+model Medidas {
+  id      String @id @default(uuid())
+  altura  Float
+  peso    Float
+  busto   Float
+  cintura Float
+  quadril Float
+  tamanho String
+
+  clienteId String  @unique
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+}
+
+model Produto {
+  id        String   @id @default(uuid())
+  codigo    String   @unique
+  nome      String
+  categoria String
+  descricao String?
+  fotoUrl   String
+  criadoEm DateTime @default(now())
+
+  lojaId   String
+  loja     Loja       @relation(fields: [lojaId], references: [id])
+  estoques Estoque[]
+  looks    LookItem[]
+}
+
+model Estoque {
+  id         String @id @default(uuid())
+  tamanho    String
+  cor        String
+  quantidade Int    @default(0)
+
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id])
+}
+
+model QRCode {
+  id        String   @id @default(uuid())
+  codigo    String   @unique
+  ativo     Boolean  @default(true)
+  criadoEm DateTime @default(now())
+  expiresEm DateTime
+
+  lojaId String
+  loja   Loja    @relation(fields: [lojaId], references: [id])
+  sessao Sessao?
+}
+
+model Sessao {
+  id          String    @id @default(uuid())
+  status      String    @default("ativa")
+  criadoEm   DateTime  @default(now())
+  encerradaEm DateTime?
+
+  lojaId     String
+  loja       Loja     @relation(fields: [lojaId], references: [id])
+  vendedorId String
+  vendedor   Vendedor @relation(fields: [vendedorId], references: [id])
+  clienteId  String
+  cliente    Cliente  @relation(fields: [clienteId], references: [id])
+  qrcodeId   String   @unique
+  qrcode     QRCode   @relation(fields: [qrcodeId], references: [id])
+  looks      Look[]
+}
+
+model Look {
+  id        String    @id @default(uuid())
+  imagemUrl String
+  criadoEm DateTime  @default(now())
+  favorito  Boolean   @default(false)
+  expiresEm DateTime?
+
+  sessaoId  String
+  sessao    Sessao     @relation(fields: [sessaoId], references: [id])
+  clienteId String
+  cliente   Cliente    @relation(fields: [clienteId], references: [id])
+  itens     LookItem[]
+}
+
+model LookItem {
+  id String @id @default(uuid())
+
+  lookId    String
+  look      Look    @relation(fields: [lookId], references: [id])
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id])
+}
